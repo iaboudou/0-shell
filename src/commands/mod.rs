@@ -9,7 +9,7 @@ mod mv;
 mod mkdir;
 mod exit;
 
-#[allow(unused)]
+// Find and execute the corresponding command
 pub fn dispatch(cmd: &str, args: &[String]) {
     match cmd {
         "cat" => cat::run(args),
