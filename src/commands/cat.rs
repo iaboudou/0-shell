@@ -1,18 +1,17 @@
 use std::io::Write;
 
+// Display file contents or read from standard input.
 pub fn run(args: &[String]) {
 
     if args.is_empty() {
         loop {
             let mut input = String::new();
             let n = std::io::stdin().read_line(&mut input).unwrap();
-            
+
             if n == 0 {
-                print!("{input}");
-                std::io::stdout().flush().unwrap();
                 break;
             }
-
+        
             print!("{input}");
         }
     }

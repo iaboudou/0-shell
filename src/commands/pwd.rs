@@ -1,7 +1,7 @@
 
-
+// Print the current working directory.
 pub fn run(args: &[String]) {
-    if args.len() > 1 {
+    if !args.is_empty() {
         eprintln!("pwd: too many arguments");
         return;
     }

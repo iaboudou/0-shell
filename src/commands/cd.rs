@@ -1,5 +1,5 @@
 
-
+// Change the current working directory.
 pub fn run(args: &[String]) {
     if args.is_empty() {
         let home = std::env::var("HOME").unwrap();
