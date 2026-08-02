@@ -9,7 +9,12 @@ pub enum ParseResult {
 // Process user input and call the input function to handle incomplete commands
 pub fn run() {
     loop {
-        print!("$ ");
+
+        match std::env::current_dir() {
+            Ok(path) => print!("{} $ ", path.display()),
+            Err(_) => print!("$ "),
+        }
+
         std::io::stdout().flush().unwrap();
 
         let mut line = String::new();
