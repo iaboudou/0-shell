@@ -12,13 +12,13 @@ pub fn run(args: &[String]) {
             let is_dir = std::fs::symlink_metadata(arg).map(|m| m.is_dir()).unwrap_or(false);
             if !is_dir {
                 if let Err(e) = std::fs::remove_file(arg) {
-                    eprintln!("rm: {}", e);
+                    eprintln!("rm: cannot remove '{}': {}", arg, e);
                 }
                 continue;
             }
 
             if let Err(e) = std::fs::remove_dir_all(arg) {
-                eprintln!("rm: {}", e);
+                eprintln!("rm: cannot remove '{}': {}", arg, e);
             }
         }
     }
@@ -27,12 +27,12 @@ pub fn run(args: &[String]) {
 
             let is_dir = std::fs::symlink_metadata(arg).map(|m| m.is_dir()).unwrap_or(false);
             if is_dir {
-                eprintln!("rm: cannot remove {}: Is a directory", arg);
+                eprintln!("rm: cannot remove '{}': Is a directory", arg);
                 continue;
             }
 
             if let Err(e) = std::fs::remove_file(arg) {
-                eprintln!("rm: {}", e);
+                eprintln!("rm: cannot remove '{}': {}", arg, e);
             }
         }
     }

@@ -1,4 +1,3 @@
-
 pub fn run(args: &[String]) {
     if args.len() < 2 {
         eprintln!("cp: missing file operand");
@@ -15,10 +14,14 @@ pub fn run(args: &[String]) {
     for arg in &args[..args.len() - 1] {
         
         let src = std::path::Path::new(arg);
-    
+        
+        if !src.exists() && !src.is_symlink() {
+            eprintln!("cp: cannot stat '{}': No such file or directory", arg);
+            continue;
+        }
         
         if !src.is_file() {
-            eprintln!("cp: '{}' is not a file", arg);
+            eprintln!("cp: -r not specified; omitting directory '{}'", arg);
             continue;
         }
     
@@ -45,14 +48,14 @@ pub fn run(args: &[String]) {
             };
 
             if let Err(e) = std::fs::copy(src, &(dest.join(f_n))) {
-                eprintln!("cp: {}", e);
+                eprintln!("cp: {}: {}", arg, e);
             }
             continue;
         }
         
         // 2nd arg is file
         if let Err(e) = std::fs::copy(src, dest) {
-            eprintln!("cp: {}", e);
+            eprintln!("cp: {}: {}", arg, e);
         }
     }
 

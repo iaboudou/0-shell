@@ -1,9 +1,8 @@
-
 // Change the current working directory.
 pub fn run(args: &[String]) {
 
     if args.len() > 1 {
-        println!("cd: too many arguments");
+        eprintln!("cd: too many arguments");
         return;
     }
 
@@ -13,7 +12,7 @@ pub fn run(args: &[String]) {
                 let oldpwd = std::env::current_dir();
 
                 if let Err(e) = std::env::set_current_dir(&home) {
-                    eprintln!("cd: {}", e);
+                    eprintln!("cd: {}: {}", home, e.kind());
                     return;
                 }
 
@@ -24,7 +23,7 @@ pub fn run(args: &[String]) {
                 
             }
             Err(e) => {
-                eprintln!("cd: {}", e);
+                eprintln!("cd: HOME not set: {}", e);
             }
         }
         return;
@@ -36,7 +35,7 @@ pub fn run(args: &[String]) {
                 let current = std::env::current_dir();
 
                 if let Err(e) = std::env::set_current_dir(&oldpwd) {
-                    eprintln!("cd: {}", e);
+                    eprintln!("cd: {}: {}", oldpwd, e.kind());
                     return;
                 }
 
@@ -47,7 +46,7 @@ pub fn run(args: &[String]) {
                 println!("{}", oldpwd);
             }
             Err(e) => {
-                eprintln!("cd: {}", e);
+                eprintln!("cd: OLDPWD not set: {}", e);
             }
         }
         return;
@@ -57,7 +56,7 @@ pub fn run(args: &[String]) {
         match std::env::var("HOME") {
             Ok(home) => format!("{}/{}", home, &args[0][2..]),
             Err(e) => {
-                eprintln!("cd: {}", e);
+                eprintln!("cd: HOME not set: {}", e);
                 return;
             }
         }
@@ -67,8 +66,8 @@ pub fn run(args: &[String]) {
 
     let oldpwd = std::env::current_dir();
 
-    if let Err(er) = std::env::set_current_dir(arg) {
-        eprintln!("cd: {}", er);
+    if let Err(er) = std::env::set_current_dir(&arg) {
+        eprintln!("cd: {}: {}", arg, er.kind());
         return;
     }
 

@@ -248,7 +248,7 @@ impl Ls {
                     }
                 },
                 Err(e) => {
-                    eprintln!("ls: {}", e);
+                    eprintln!("ls: {}: {}", entry, e);
                 },
             }
         }
@@ -259,7 +259,7 @@ impl Ls {
                     self.name.push_str(Ls::file_type_indicator(meta_data, &self.flags));
                 },
                 Err(e) => {
-                    eprintln!("ls: {}", e);
+                    eprintln!("ls: {}: {}", entry, e);
                 },
             }
         }
@@ -279,7 +279,7 @@ impl Ls {
                             }
                         }
                         Err(e) => {
-                            eprintln!("ls: {}", e);
+                            eprintln!("ls: {}: {}", path, e);
                         }
                     }
                 }
