@@ -82,7 +82,7 @@ struct Ls {
     hard_link: u64,
     owner: String,
     group: String,
-    size: u64,
+    size: String, // will be "{major, minor}" in case of block device or character device (c/b)
     last_update: String,
     name: String,
     flags : Flags,
@@ -95,7 +95,7 @@ impl Ls {
             hard_link: 0,
             owner: "".to_owned(),
             group: "".to_owned(),
-            size: 0,
+            size: "".to_owned(),
             last_update: "".to_owned(),
             name: "".to_owned(),
             flags: Flags::new(),
@@ -212,9 +212,15 @@ impl Ls {
                             self.group = meta_data.gid().to_string();
                         }
                     }
-
+                    
+                    // in case of (c/b)
+                    if meta_data.file_type().is_char_device() || meta_data.file_type().is_block_device() {
+                        self.size = format!("{:>3}, {:>3}", libc::major(meta_data.rdev()), libc::minor(meta_data.rdev()));
+                    }
                     // size
-                    self.size = meta_data.size();
+                    else {
+                        self.size = meta_data.size().to_string();
+                    }
 
                     // last update
                     match chrono::DateTime::from_timestamp(meta_data.mtime(), 0) {
@@ -303,9 +309,36 @@ impl Ls {
 
         let perms = ["---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"];
 
-        let owner = perms[((mode >> 6) & 0b0000_000_000_000_111) as usize];
-        let group = perms[((mode >> 3) & 0b0000_000_000_000_111) as usize];
-        let other = perms[(mode & 0b0000_000_000_000_111) as usize];
+        let mut owner = perms[((mode >> 6) & 0b0000_000_000_000_111) as usize].to_owned();
+        let mut group = perms[((mode >> 3) & 0b0000_000_000_000_111) as usize].to_owned();
+        let mut other = perms[(mode & 0b0000_000_000_000_111) as usize].to_owned();
+
+        // setuid -> replace with s/S
+        if mode & 0b0000_100_000_000_000 != 0 {
+            if mode & 0b0000_000_001_000_000 != 0 {
+                owner.replace_range(2..3, "s");
+            }else {
+                owner.replace_range(2..3, "S");
+            }
+        }
+
+        // setgid -> replace with s/S
+        if mode & 0b0000_010_000_000_000 != 0 {
+            if mode & 0b0000_000_000_001_000 != 0 {
+                group.replace_range(2..3, "s");
+            }else {
+                group.replace_range(2..3, "S");
+            }
+        }
+
+        // sticky bit -> replace with t/T
+        if mode & 0b0000_001_000_000_000 != 0 {
+            if mode & 0b0000_000_000_000_001 != 0 {
+                other.replace_range(2..3, "t");
+            }else {
+                other.replace_range(2..3, "T");
+            }
+        }
 
         format!("{}{}{}{}", file_type, owner, group, other)
     }
@@ -344,7 +377,7 @@ impl Display for Ls {
         if self.flags.l {
             write!(
                 f,
-                "{} {:>2} {} {} {:>5} {} {}",
+                "{} {:>2} {:<10} {:<10} {:>11} {:>15} {}",
                 self.permission,
                 self.hard_link,
                 self.owner,
