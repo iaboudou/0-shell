@@ -4,42 +4,56 @@ pub fn run(args: &[String]) {
         eprintln!("cp: missing file operand");
         return;
     }
-    if args.len() > 2 {
-        eprintln!("cp: too many arguments");
-        return;
+
+    let dest = std::path::Path::new(&args[args.len() -1]);
+
+    if args.len() > 2 && !dest.is_dir() { 
+        eprintln!("cp: target '{}' is not a directory", args[args.len() - 1]); 
+        return; 
     }
 
-    let src = std::path::Path::new(&args[0]);
-    let dest = std::path::Path::new(&args[1]);
-
+    for arg in &args[..args.len() - 1] {
+        
+        let src = std::path::Path::new(arg);
     
-    if !src.is_file() {
-        eprintln!("cp: '{}' is not a file", args[0]);
-        return;
-    }
+        
+        if !src.is_file() {
+            eprintln!("cp: '{}' is not a file", arg);
+            continue;
+        }
+    
+        // if both args are the same file
+        match (std::fs::canonicalize(src), std::fs::canonicalize(dest)) {
+            (Ok(s), Ok(d)) => {
+                if s == d {
+                    eprintln!("cp: '{}' and '{}' are the same file", arg, &args[args.len() - 1]);
+                    continue;
+                }
+            },
+            _ => {},
+        }
+    
+        // 2nd arg is a dir
+        if  dest.is_dir() {
 
-    // if both args are the same file
-    match (std::fs::canonicalize(src), std::fs::canonicalize(dest)) {
-        (Ok(s), Ok(d)) => {
-            if s == d {
-                eprintln!("cp: '{}' and '{}' are the same file", args[0], args[1]);
-                return;
+            let f_n = match src.file_name() {
+                Some(name) => name,
+                None => {
+                    eprintln!("cp: cannot determine filename for '{}'", arg);
+                    continue;
+                }
+            };
+
+            if let Err(e) = std::fs::copy(src, &(dest.join(f_n))) {
+                eprintln!("cp: {}", e);
             }
-        },
-        _ => {},
-    }
-
-    // 2nd arg is a dir
-    if  dest.is_dir() {
-        if let Err(e) = std::fs::copy(src, &(dest.join(src.file_name().unwrap()))) {
+            continue;
+        }
+        
+        // 2nd arg is file
+        if let Err(e) = std::fs::copy(src, dest) {
             eprintln!("cp: {}", e);
         }
-        return;
-    }
-    
-    // 2nd arg is file
-    if let Err(e) = std::fs::copy(src, dest) {
-        eprintln!("cp: {}", e);
     }
 
 }
