@@ -1,5 +1,5 @@
 
-#[allow(dead_code)]
+
 pub fn run(_args: &[String]) {
-    println!("exit")
+    std::process::exit(0);
 }
