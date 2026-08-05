@@ -23,8 +23,20 @@ pub fn run(args: &[String]) {
         return;
     }
 
-    for e in entries {
-        Ls::ls(&e, &flags);
+    entries.sort_by_key(|e| { if std::path::Path::new(e).is_dir() { 1 } else { 0 } });
+
+    for (i, e) in entries.iter().enumerate() {
+        if entries.len() > 1 && std::path::Path::new(e).is_dir() {
+            println!("{}:", e);
+        }
+
+        Ls::ls(e, &flags);
+
+        if i + 1 < entries.len() {
+            if !std::path::Path::new(&entries[i + 1]).is_file() {
+                println!();
+            }
+        }
     }
 }
 
@@ -289,7 +301,13 @@ impl Ls {
                 return None;
             },
         }
-        entries.sort();
+
+        entries.sort_by(|a, b| {
+            let a = std::path::Path::new(a).file_name().map(|x| x.to_string_lossy()).unwrap_or_default();
+            let b = std::path::Path::new(b).file_name().map(|x| x.to_string_lossy()).unwrap_or_default();
+            a.trim_start_matches('.').cmp(b.trim_start_matches('.')).then_with(|| a.cmp(&b))
+        });
+
         Some(entries)
     }
 

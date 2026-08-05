@@ -19,11 +19,6 @@ pub fn run(args: &[String]) {
             eprintln!("cp: cannot stat '{}': No such file or directory", arg);
             continue;
         }
-        
-        if !src.is_file() {
-            eprintln!("cp: -r not specified; omitting directory '{}'", arg);
-            continue;
-        }
     
         // if both args are the same file
         match (std::fs::canonicalize(src), std::fs::canonicalize(dest)) {

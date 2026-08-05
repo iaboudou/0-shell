@@ -15,7 +15,9 @@ pub fn run() {
             Err(_) => print!("$ "),
         }
 
-        std::io::stdout().flush().unwrap();
+        if let Err(_) = std::io::stdout().flush() {
+            return;
+        }
 
         let mut line = String::new();
 
@@ -51,15 +53,29 @@ fn input(mut line: String) -> Option<Vec<String>> {
 
             ParseResult::Uncomplete(s) => {
                 print!("{s}");
-                std::io::stdout().flush().unwrap();
+
+                if let Err(_) = std::io::stdout().flush() {
+                    return None;
+                }
 
                 let mut next = String::new();
-                let n = std::io::stdin().read_line(&mut next).unwrap();
+                let n = match std::io::stdin().read_line(&mut next) {
+                    Ok(n) => n,
+                    Err(_) => return None,
+                };
 
                 if n == 0 {
                     return None;
                 }
                 else {
+                    if !next.trim().ends_with('\\') && line.starts_with("echo") && !next.trim().ends_with('"') {
+                        line.push('\n');
+                    }
+
+                    if line.trim_end().ends_with('\\') {
+                        line = line.trim_end().to_string();
+                        line.pop();
+                    }
                     line.push_str(&next);
                 }
             },

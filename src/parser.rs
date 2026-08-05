@@ -29,6 +29,12 @@ pub fn parse(line: &str) -> ParseResult {
         tokens.push(temp);
     }
 
+    if let Some(last) = tokens.last_mut() {
+        if last.ends_with('\\') {
+            return ParseResult::Uncomplete("> ".to_string());
+        }
+    }
+
     if in_single_quot {
         return ParseResult::Uncomplete("quote> ".to_string());
     }
