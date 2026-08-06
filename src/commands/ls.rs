@@ -122,19 +122,36 @@ impl Ls {
         
         // if path is file
         if let Ok(metadata) = meta_data {
-            if metadata.file_type().is_file()
-                    || metadata.file_type().is_symlink()
-                    || metadata.file_type().is_fifo()
-                    || metadata.file_type().is_socket()
-                    || metadata.file_type().is_char_device()
-                    || metadata.file_type().is_block_device()
-                {
+            if metadata.file_type().is_symlink() {
+                if let Ok(target) = std::fs::metadata(p) {
+                    if !target.is_dir() || flags.l {
+                        let mut ls = Self::new();
+                        ls.flags = flags.clone();
+                        ls.mutate_ls_info(path);
+                        println!("{}", ls);
+                        return;
+                    }
+                } else {
                     let mut ls = Self::new();
                     ls.flags = flags.clone();
                     ls.mutate_ls_info(path);
                     println!("{}", ls);
                     return;
                 }
+            }
+        
+            if metadata.file_type().is_file()
+                || metadata.file_type().is_fifo()
+                || metadata.file_type().is_socket()
+                || metadata.file_type().is_char_device()
+                || metadata.file_type().is_block_device()
+            {
+                let mut ls = Self::new();
+                ls.flags = flags.clone();
+                ls.mutate_ls_info(path);
+                println!("{}", ls);
+                return;
+            }
         }
 
         // if path is not a file
