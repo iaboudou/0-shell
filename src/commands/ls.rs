@@ -200,7 +200,7 @@ impl Ls {
                 Ok(meta_data) => {
 
                     // permission
-                    self.permission = Self::oct_to_string_permission( meta_data.permissions().mode() );
+                    self.permission = Self::oct_to_string_permission( meta_data );
 
                     // hard link
                     self.hard_link = meta_data.nlink();
@@ -312,17 +312,28 @@ impl Ls {
     }
 
     // convert unix file mode to a human-readable permission string
-    fn oct_to_string_permission(mode: u32) -> String {
+    fn oct_to_string_permission(metadata: &std::fs::Metadata) -> String {
 
-        let file_type = match mode & 0b1111_000_000_000_000 {
-            0b1000_000_000_000_000 => "-",
-            0b0100_000_000_000_000 => "d",
-            0b1010_000_000_000_000 => "l",
-            0b0110_000_000_000_000 => "b",
-            0b0010_000_000_000_000 => "c",
-            0b0001_000_000_000_000 => "p",
-            0b1100_000_000_000_000 => "s",
-            _ => "?",
+        let mode = metadata.permissions().mode();
+
+        let file_type = metadata.file_type();
+            
+        let c = if file_type.is_dir() {
+            "d"
+        } else if file_type.is_symlink() {
+            "l"
+        } else if file_type.is_block_device() {
+            "b"
+        } else if file_type.is_char_device() {
+            "c"
+        } else if file_type.is_fifo() {
+            "p"
+        } else if file_type.is_socket() {
+            "s"
+        } else if file_type.is_file() {
+            "-"
+        } else {
+            "?"
         };
 
         let perms = ["---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"];
@@ -358,7 +369,7 @@ impl Ls {
             }
         }
 
-        format!("{}{}{}{}", file_type, owner, group, other)
+        format!("{}{}{}{}", c, owner, group, other)
     }
 
     // take the suffix character based on the file's type
