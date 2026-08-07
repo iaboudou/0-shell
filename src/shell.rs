@@ -11,8 +11,18 @@ pub fn run() {
     loop {
 
         match std::env::current_dir() {
-            Ok(path) => print!("{} $ ", path.display()),
-            Err(_) => print!("$ "),
+            Ok(path) => {
+
+                let mut p = path.display().to_string();
+                if let Ok(home) = std::env::var("HOME") {
+                    if path.display().to_string().starts_with(&home) {
+                        p = p.trim_start_matches(&home).to_string();
+                        p.insert(0, '~');
+                    }
+                }
+                print!("\x1b[34m{} $ \x1b[0m", p)
+            },
+            Err(_) => print!("\x1b[34m$ \x1b[0m"),
         }
 
         if let Err(_) = std::io::stdout().flush() {
