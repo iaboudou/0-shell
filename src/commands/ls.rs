@@ -33,7 +33,7 @@ pub fn run(args: &[String]) {
         Ls::ls(e, &flags);
 
         if i + 1 < entries.len() {
-            if !std::path::Path::new(&entries[i + 1]).is_file() {
+            if std::path::Path::new(&entries[i + 1]).is_dir() {
                 println!();
             }
         }
@@ -466,7 +466,7 @@ impl Display for Ls {
 
             write!(
                 f,
-                "{} {:>w_hard_link$} {:<w_owner$} {:<w_group$} {:>w_size$} {:>w_last_update$} {}",
+                "{}  {:>w_hard_link$} {:<w_owner$} {:<w_group$}  {:>w_size$} {:>w_last_update$}  {}",
                 self.permission,
                 self.hard_link,
                 self.owner,

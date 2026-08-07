@@ -8,6 +8,7 @@ mod rm;
 mod mv;
 mod mkdir;
 mod exit;
+mod help;
 
 // Find and execute the corresponding command
 pub fn dispatch(cmd: &str, args: &[String]) {
@@ -22,6 +23,7 @@ pub fn dispatch(cmd: &str, args: &[String]) {
         "mv" => mv::run(args),
         "pwd" => pwd::run(args),
         "rm" => rm::run(args),
+        "help" => help::help(),
         other => println!("Command '{}' not found", other),
     }
 }

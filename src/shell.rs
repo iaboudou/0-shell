@@ -20,7 +20,7 @@ pub fn run() {
                         p.insert(0, '~');
                     }
                 }
-                print!("\x1b[34m{} $ \x1b[0m", p)
+                print!("\x1b[34m{}$ \x1b[0m", p)
             },
             Err(_) => print!("\x1b[34m$ \x1b[0m"),
         }

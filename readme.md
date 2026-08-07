@@ -31,6 +31,7 @@ Implemented commands:
 - `rm` (`-r`)
 - `mv`
 - `mkdir`
+- `help` (displays available commands and their options)
 - `exit`
 
 ---
