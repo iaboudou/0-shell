@@ -33,13 +33,20 @@ pub fn run() {
 
         match std::io::stdin().read_line(&mut line) {
             Ok(n) => {
+
+                if line.contains("\x1b") {
+                    eprintln!("0-shell: bad pattern");
+                    continue;
+                }
                 if n == 0 {
                     println!();
                     break;
                 }
                 else if n != 1 {
                     if let Some(tokens) = input(line) {
-                        commands::dispatch(&tokens[0], &tokens[1..]);
+                        if !tokens.is_empty() {
+                            commands::dispatch(&tokens[0], &tokens[1..]);
+                        }
                     }
                 }
             },
