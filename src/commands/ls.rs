@@ -88,6 +88,23 @@ impl Flags {
     }
 }
 
+#[derive(Debug, Clone)]
+struct Widths {
+    permission: usize,
+    hard_link: usize,
+    owner: usize,
+    group: usize,
+    size: usize,
+    last_update: usize,
+    name: usize,
+}
+
+impl Widths {
+    fn new() -> Self {
+        Self { permission:0, hard_link: 0, owner: 0, group: 0, size: 0, last_update:0, name: 0, }
+    }
+}
+
 #[derive(Debug)]
 struct Ls {
     permission: String,
@@ -98,6 +115,7 @@ struct Ls {
     last_update: String,
     name: String,
     flags : Flags,
+    widths: Widths,
 }
 
 impl Ls {
@@ -111,6 +129,7 @@ impl Ls {
             last_update: "".to_owned(),
             name: "".to_owned(),
             flags: Flags::new(),
+            widths: Widths::new(),
         }
     }
 
@@ -177,13 +196,30 @@ impl Ls {
 
         let is_empty = entries.is_empty();
 
+        let mut ls_list: Vec<Ls> = Vec::new();
+
         for e in entries {
             let mut ls = Self::new();
             ls.flags = flags.clone();
             ls.mutate_ls_info(&e);
-        
+            ls_list.push(ls);
+        }
+
+        let mut widths = Widths::new();
+        for ls in &ls_list {
+            widths.permission = widths.permission.max(ls.permission.len());
+            widths.hard_link = widths.hard_link.max(ls.hard_link.to_string().len());
+            widths.owner = widths.owner.max(ls.owner.len());
+            widths.group = widths.group.max(ls.group.len());
+            widths.size = widths.size.max(ls.size.len());
+            widths.last_update = widths.last_update.max(ls.last_update.len());
+            widths.name = widths.name.max(ls.name.len());
+        }
+
+        for ls in &mut ls_list {
+            ls.widths = widths.clone();
             if flags.l {
-                println!("{}", ls);
+                println!("{} ", ls);
             } else {
                 print!("{} ", ls);
             }
@@ -421,9 +457,16 @@ impl Ls {
 impl Display for Ls {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.flags.l {
+
+            let w_hard_link = self.widths.hard_link;
+            let w_owner = self.widths.owner;
+            let w_group = self.widths.group;
+            let w_size = self.widths.size;
+            let w_last_update = self.widths.last_update;
+
             write!(
                 f,
-                "{} {:>2} {:<10} {:<10} {:>11} {:>15} {}",
+                "{} {:>w_hard_link$} {:<w_owner$} {:<w_group$} {:>w_size$} {:>w_last_update$} {}",
                 self.permission,
                 self.hard_link,
                 self.owner,
