@@ -50,8 +50,7 @@ pub fn run(args: &[String]) {
         
         // 2nd arg is file
         if let Err(e) = std::fs::copy(src, dest) {
-            eprintln!("cp: {}: {}", arg, e);
+            eprintln!("cp: {}: {}", arg, e.kind());
         }
     }
-
 }

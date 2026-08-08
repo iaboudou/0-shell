@@ -44,3 +44,4 @@ Clone the repository:
 ```bash
 git clone https://github.com/iaboudou/0-shell.git
 cd 0-shell
+```
