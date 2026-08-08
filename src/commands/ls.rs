@@ -315,7 +315,7 @@ impl Ls {
                     }
                 },
                 Err(e) => {
-                    eprintln!("ls: {}: {}", entry.display(), e);
+                    eprintln!("ls: {}: {}", entry.display(), e.kind());
                 },
             }
         }
@@ -326,7 +326,7 @@ impl Ls {
                     self.name.push(Ls::file_type_indicator(meta_data, &self.flags));
                 },
                 Err(e) => {
-                    eprintln!("ls: {}: {}", entry.display(), e);
+                    eprintln!("ls: {}: {}", entry.display(), e.kind());
                 },
             }
         }
@@ -347,13 +347,13 @@ impl Ls {
                             }
                         }
                         Err(e) => {
-                            eprintln!("ls: {}: {}", path, e);
+                            eprintln!("ls: {}: {}", path, e.kind());
                         }
                     }
                 }
             },
             Err(e) => {
-                eprintln!("ls: cannot access '{}': {}", path, e);
+                eprintln!("ls: cannot access '{}': {}", path, e.kind());
                 return None;
             },
         }

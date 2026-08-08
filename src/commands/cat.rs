@@ -10,7 +10,7 @@ pub fn run(args: &[String]) {
             let n = match std::io::stdin().read_line(&mut input) {
                 Ok(n) => n,
                 Err(e) => {
-                    eprintln!("cat: {}", e);
+                    eprintln!("cat: {}", e.kind());
                     break;
                 }
             };
@@ -27,11 +27,11 @@ pub fn run(args: &[String]) {
         match std::fs::read(file) {
             Ok(content) => {
                 if let Err(e) = std::io::stdout().write_all(&content) {
-                    eprintln!("cat: {}", e);
+                    eprintln!("cat: {}", e.kind());
                 }
             },
             Err(e) => {
-                eprintln!("cat: {}: {}", file, e);
+                eprintln!("cat: {}: {}", file, e.kind());
             }
         }
     }

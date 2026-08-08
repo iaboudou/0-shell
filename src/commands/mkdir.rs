@@ -8,7 +8,7 @@ pub fn run(args: &[String]) {
 
     for arg in args {
         if let Err(e) = std::fs::create_dir(arg) {
-            eprintln!("mkdir: {}", e);
+            eprintln!("mkdir: {}", e.kind());
         }
     }
 }
