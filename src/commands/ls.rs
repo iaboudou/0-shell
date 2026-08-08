@@ -2,6 +2,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::fs::MetadataExt;
 use std::os::unix::fs::FileTypeExt;
 use std::fmt::{Display, Formatter, Result};
+use std::os::unix::ffi::OsStrExt;
 
 pub fn run(args: &[String]) {
 
@@ -113,7 +114,7 @@ struct Ls {
     group: String,
     size: String, // will be "{major, minor}" in case of block device or character device (c/b)
     last_update: String,
-    name: String,
+    name: std::ffi::OsString,
     flags : Flags,
     widths: Widths,
 }
@@ -127,7 +128,7 @@ impl Ls {
             group: "".to_owned(),
             size: "".to_owned(),
             last_update: "".to_owned(),
-            name: "".to_owned(),
+            name: std::ffi::OsString::new(),
             flags: Flags::new(),
             widths: Widths::new(),
         }
@@ -146,14 +147,14 @@ impl Ls {
                     if !target.is_dir() || flags.l {
                         let mut ls = Self::new();
                         ls.flags = flags.clone();
-                        ls.mutate_ls_info(path);
+                        ls.mutate_ls_info(std::ffi::OsStr::new(path));
                         println!("{}", ls);
                         return;
                     }
                 } else {
                     let mut ls = Self::new();
                     ls.flags = flags.clone();
-                    ls.mutate_ls_info(path);
+                    ls.mutate_ls_info(std::ffi::OsStr::new(path));
                     println!("{}", ls);
                     return;
                 }
@@ -167,7 +168,7 @@ impl Ls {
             {
                 let mut ls = Self::new();
                 ls.flags = flags.clone();
-                ls.mutate_ls_info(path);
+                ls.mutate_ls_info(std::ffi::OsStr::new(path));
                 println!("{}", ls);
                 return;
             }
@@ -179,8 +180,8 @@ impl Ls {
             None => return,
         };
         if flags.a {
-            entries.insert(0, format!("{path}/.."));
-            entries.insert(0, format!("{path}/."));  
+            entries.insert(0, std::ffi::OsString::from(format!("{path}/..")));
+            entries.insert(0, std::ffi::OsString::from(format!("{path}/.")));  
         }
 
         let mut total = 0;
@@ -231,18 +232,19 @@ impl Ls {
     }
 
     // collect and print information for a single file or directory entry
-    fn mutate_ls_info(&mut self, entry: &str) {
+    fn mutate_ls_info(&mut self, entry: &std::ffi::OsStr) {
    
         let path = std::path::Path::new(entry);
 
-        self.name = if entry == ".." || entry.ends_with("/..") {
-            "..".to_string()
-        } else if entry == "." || entry.ends_with("/.") {
-            ".".to_string()
+        let s = entry.to_string_lossy();
+        self.name = if s == "." || s.ends_with("/.") {
+            std::ffi::OsString::from(".")
+        } else if s == ".." || s.ends_with("/..") {
+            std::ffi::OsString::from("..")
         } else {
             match path.file_name() {
-                Some(name) => name.to_string_lossy().to_string(),
-                None => entry.to_string(),
+                Some(name) => name.to_os_string(),
+                None => entry.to_os_string(),
             }
         };
 
@@ -301,19 +303,19 @@ impl Ls {
                     // add (-> target) if the file is a symlink
                    if meta_data.file_type().is_symlink() {
                         if let Ok(target) = std::fs::read_link(path) {
-                            let mut t = target.display().to_string();
+                            let mut t = target.as_os_str().to_os_string();
                         
                             if self.flags.f {
                                 if let Ok(t_md) = std::fs::metadata(path) {
-                                    t.push_str(Self::file_type_indicator(&t_md, &self.flags));
+                                    t.push(Self::file_type_indicator(&t_md, &self.flags));
                                 }
                             }
-                            self.name.push_str(&format!(" -> {}", t));
+                            self.name.push(&format!(" -> {}", t.display()));
                         }
                     }
                 },
                 Err(e) => {
-                    eprintln!("ls: {}: {}", entry, e);
+                    eprintln!("ls: {}: {}", entry.display(), e);
                 },
             }
         }
@@ -321,17 +323,17 @@ impl Ls {
         if self.flags.f {
             match &sl_metadata {
                 Ok(meta_data) => {
-                    self.name.push_str(Ls::file_type_indicator(meta_data, &self.flags));
+                    self.name.push(Ls::file_type_indicator(meta_data, &self.flags));
                 },
                 Err(e) => {
-                    eprintln!("ls: {}: {}", entry, e);
+                    eprintln!("ls: {}: {}", entry.display(), e);
                 },
             }
         }
     }
 
     // collect all entries from a directory and return them sorted
-    fn collect_directories(path: String, flags: &Flags) -> Option<Vec<String>> {
+    fn collect_directories(path: String, flags: &Flags) -> Option<Vec<std::ffi::OsString>> {
         let mut entries = Vec::new();
 
         match std::fs::read_dir(&path) {
@@ -339,8 +341,9 @@ impl Ls {
                 for entry in dir {
                     match entry {
                         Ok(e) => {
-                            if flags.a || !e.file_name().to_string_lossy().starts_with('.') {
-                                entries.push(e.path().display().to_string());
+                            let name = e.file_name();
+                            if flags.a || !name.as_bytes().starts_with(b".") {
+                                entries.push(e.path().into_os_string());
                             }
                         }
                         Err(e) => {
@@ -356,9 +359,9 @@ impl Ls {
         }
 
         entries.sort_by(|a, b| {
-            let a = std::path::Path::new(a).file_name().map(|x| x.to_string_lossy()).unwrap_or_default();
-            let b = std::path::Path::new(b).file_name().map(|x| x.to_string_lossy()).unwrap_or_default();
-            a.trim_start_matches('.').cmp(b.trim_start_matches('.')).then_with(|| a.cmp(&b))
+            let a = a.as_os_str().as_bytes();
+            let b = b.as_os_str().as_bytes();
+            a.cmp(b)
         });
 
         Some(entries)
@@ -473,10 +476,10 @@ impl Display for Ls {
                 self.group,
                 self.size,
                 self.last_update,
-                self.name
+                self.name.to_string_lossy()
             )?;
         } else {
-            write!(f, "{}", self.name)?;
+            write!(f, "{}", self.name.to_string_lossy())?;
         }
 
         Ok(())
