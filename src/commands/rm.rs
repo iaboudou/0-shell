@@ -1,52 +1,62 @@
 
 pub fn run(args: &[String]) {
+    let mut r = false;
+    let mut can_take_options = true;
+    let mut files = Vec::new();
 
-    if args.is_empty() || (args.len() == 1 && args[0] == "-r") {
+    // collect valid args
+    for arg in args {
+        if can_take_options && arg == "--" {
+            can_take_options = false;
+            continue;
+        }
+
+        if can_take_options && arg == "-r" {
+            r = true;
+            continue;
+        }
+
+        files.push(arg);
+    }
+
+    if files.is_empty() {
         eprintln!("rm: missing operand");
         return;
     }
 
-    let r_arg_exits = args[0] == "-r";
-    let t = if r_arg_exits { &args[1..] } else { args };
+    for arg in files {
+        if arg == "." || arg == ".." {
+            eprintln!(
+                "rm: refusing to remove '{}' directory: skipping '{}'",
+                arg, arg
+            );
+            continue;
+        }
 
-    for arg in t {
-
-        if r_arg_exits {
-            if arg == "." || arg == ".." {
-                eprintln!("rm: refusing to remove '.' or '..' directory: skipping '{}'", arg);
-                continue;
-            }
-
-            if arg == "/" {
-                eprintln!("rm: it is dangerous to operate recursively on '/'");
-                continue;
-            }
+        if arg == "/" {
+            eprintln!("rm: it is dangerous to operate recursively on '/'");
+            continue;
         }
 
         let metadata = match std::fs::symlink_metadata(arg) {
             Ok(m) => m,
             Err(e) => {
-                eprintln!("rm: cannot remove '{}': {}", arg, e);
+                eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
                 continue;
             }
         };
 
-        let is_dir = metadata.is_dir();
-
-        if is_dir {
-            if !r_arg_exits {
+        if metadata.is_dir() {
+            if !r {
                 eprintln!("rm: cannot remove '{}': Is a directory", arg);
                 continue;
             }
 
             if let Err(e) = std::fs::remove_dir_all(arg) {
-                eprintln!("rm: cannot remove '{}': {}", arg, e);
+                eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
             }
-        } else {
-            if let Err(e) = std::fs::remove_file(arg) {
-                eprintln!("rm: cannot remove '{}': {}", arg, e);
-            }
+        } else if let Err(e) = std::fs::remove_file(arg) {
+            eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
         }
     }
-    
 }

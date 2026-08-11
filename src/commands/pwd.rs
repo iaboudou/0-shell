@@ -8,6 +8,6 @@ pub fn run(args: &[String]) {
 
     match std::env::current_dir() {
         Ok(path) => println!("{}", path.display()),
-        Err(e) => eprintln!("pwd: {}", e),
+        Err(_) => eprintln!("pwd: getcwd: No such file or directory"),
     }
 }

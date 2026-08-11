@@ -6,20 +6,33 @@ pub fn parse(line: &str) -> ParseResult {
     let mut in_single_quot = false;
     let mut in_duble_quots = false;
     let mut temp = String::new();
+    let mut escaped_char = false;
 
     for (i, c) in line.chars().enumerate() {
+
+        if escaped_char {
+            temp.push(c);
+            escaped_char = false;
+            continue;
+        }
+
+        if c == '\\' && !in_single_quot {
+            escaped_char = true;
+            continue;
+        } 
+
         if c == '\'' && !in_duble_quots {
             in_single_quot = !in_single_quot;
         }
         else if c == '\"' && !in_single_quot {
             in_duble_quots = !in_duble_quots;
         }
-        else if c.is_whitespace() && !in_single_quot && !in_duble_quots {
+        else if c.is_whitespace() && !in_single_quot && !in_duble_quots  {
             if !temp.is_empty() {
                 tokens.push(temp);
                 temp = String::new();
             }
-        }else if c == '#' && !in_single_quot && !in_duble_quots && (i> 0 && line.chars().nth(i-1).unwrap_or_default().is_whitespace() ) {
+        }else if c == '#' && !in_single_quot && !in_duble_quots  && (i> 0 && line.chars().nth(i-1).unwrap_or_default().is_whitespace() ) {
             return ParseResult::Complete(tokens);
         }
         else {
@@ -31,10 +44,8 @@ pub fn parse(line: &str) -> ParseResult {
         tokens.push(temp);
     }
 
-    if let Some(last) = tokens.last_mut() {
-        if last.ends_with('\\') {
-            return ParseResult::Uncomplete("> ".to_string());
-        }
+    if escaped_char {
+        return ParseResult::Uncomplete("> ".to_string());
     }
 
     if in_single_quot {

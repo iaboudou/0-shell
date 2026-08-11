@@ -75,13 +75,27 @@ impl Flags {
 
     // validate all arguments and collect flags and paths
     fn flags_and_args_are_correct(&mut self, args: &[String], entries: &mut Vec<String>) -> bool {
-
+        let mut can_take_options = true;
         for arg in args {
-            if arg.starts_with('-') {
+            if arg == "--" {
+                can_take_options = false;
+                continue;
+            }
+
+            if arg.starts_with('-') && can_take_options {
                 if !self.has_correct_flags(arg) {
                     return false;
                 }
             } else {
+                if arg == "~" {
+                    match std::env::var("HOME") {
+                        Ok(n) => {
+                            entries.push(n);
+                            continue;
+                        }
+                        _ => {}
+                    }
+                }
                 entries.push(arg.to_string());
             }
         }
@@ -455,6 +469,20 @@ impl Ls {
     fn usage() {
         eprintln!("Usage: ls [-alF] [FILE]...");
     }
+
+    fn escape_name(name: &std::ffi::OsStr) -> String {
+        let mut result = String::new();
+        
+        for c in name.to_string_lossy().chars() {
+            if c.is_control() {
+                result.push('?');
+            } else {
+                result.push(c);
+            }
+        }
+    
+        result
+    }
 }
 
 impl Display for Ls {
@@ -476,10 +504,10 @@ impl Display for Ls {
                 self.group,
                 self.size,
                 self.last_update,
-                self.name.to_string_lossy()
+                Ls::escape_name(&self.name)
             )?;
         } else {
-            write!(f, "{}", self.name.to_string_lossy())?;
+            write!(f, "{}", Ls::escape_name(&self.name))?;
         }
 
         Ok(())

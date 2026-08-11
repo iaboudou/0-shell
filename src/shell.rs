@@ -22,7 +22,10 @@ pub fn run() {
                 }
                 print!("\x1b[34m{}$ \x1b[0m", p)
             },
-            Err(_) => print!("\x1b[34m$ \x1b[0m"),
+            Err(_) => {
+                let _ = std::env::set_current_dir("/");
+                continue
+            },
         }
 
         if let Err(_) = std::io::stdout().flush() {
@@ -33,8 +36,8 @@ pub fn run() {
 
         match std::io::stdin().read_line(&mut line) {
             Ok(n) => {
-
-                if line.contains("\x1b") {
+                // line.contains("\x1b")
+                if line.chars().any(|c| c.is_control() && c != '\n' && c != '\t') {
                     eprintln!("0-shell: bad pattern");
                     continue;
                 }
