@@ -24,7 +24,8 @@ pub fn run(args: &[String]) {
     }
 
     for file in args {
-        match std::fs::read(file) {
+        let file = crate::commands::help::tilda(file.to_string());
+        match std::fs::read(&file) {
             Ok(content) => {
                 if let Err(e) = std::io::stdout().write_all(&content) {
                     eprintln!("cat: {}", e.kind());

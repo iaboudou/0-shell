@@ -10,7 +10,8 @@ pub fn run(args: &[String]) {
         return;
     }
 
-    let dest = std::path::Path::new(&args[args.len() -1]);
+    let dest_str = crate::commands::help::tilda(args[args.len() - 1].clone());
+    let dest = std::path::Path::new(&dest_str);
 
     if args.len() > 2 && !dest.is_dir() { 
         eprintln!("mv: target '{}' is not a directory", args[args.len() - 1]); 
@@ -19,7 +20,8 @@ pub fn run(args: &[String]) {
 
     for arg in &args[..args.len() - 1] {
         
-        let src = std::path::Path::new(arg);
+        let src_str = crate::commands::help::tilda(arg.to_string());
+        let src = std::path::Path::new(&src_str);
     
         if !src.exists() && !src.is_symlink() {
             eprintln!("mv: cannot stat '{}': No such file or directory", arg);

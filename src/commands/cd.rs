@@ -52,18 +52,7 @@ pub fn run(args: &[String]) {
         return;
     }
 
-    let arg = if args[0].starts_with("~/") {
-        match std::env::var("HOME") {
-            Ok(home) => format!("{}/{}", home, &args[0][2..]),
-            Err(e) => {
-                eprintln!("cd: HOME not set: {}", e);
-                return;
-            }
-        }
-    } else {
-        args[0].clone()
-    };
-
+    let arg = crate::commands::help::tilda(args[0].clone());
     let oldpwd = std::env::current_dir();
 
     if let Err(er) = std::env::set_current_dir(&arg) {

@@ -33,30 +33,32 @@ pub fn run(args: &[String]) {
             continue;
         }
 
-        if arg == "/" {
+        let va = crate::commands::help::tilda(arg.to_string());
+
+        if va == "/" {
             eprintln!("rm: it is dangerous to operate recursively on '/'");
             continue;
         }
 
-        let metadata = match std::fs::symlink_metadata(arg) {
+        let metadata = match std::fs::symlink_metadata(&va) {
             Ok(m) => m,
             Err(e) => {
-                eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
+                eprintln!("rm: cannot remove '{}': {}", va, e.kind());
                 continue;
             }
         };
 
         if metadata.is_dir() {
             if !r {
-                eprintln!("rm: cannot remove '{}': Is a directory", arg);
+                eprintln!("rm: cannot remove '{}': Is a directory", va);
                 continue;
             }
 
-            if let Err(e) = std::fs::remove_dir_all(arg) {
-                eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
+            if let Err(e) = std::fs::remove_dir_all(&va) {
+                eprintln!("rm: cannot remove '{}': {}", va, e.kind());
             }
-        } else if let Err(e) = std::fs::remove_file(arg) {
-            eprintln!("rm: cannot remove '{}': {}", arg, e.kind());
+        } else if let Err(e) = std::fs::remove_file(&va) {
+            eprintln!("rm: cannot remove '{}': {}", va, e.kind());
         }
     }
 }

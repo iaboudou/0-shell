@@ -34,3 +34,13 @@ pub fn help() {
     println!("exit");
     println!("  Exit the shell");
 }
+
+// replace ~/ with the user's HOME directory.
+pub fn tilda(arg: String) -> String {
+    if arg.starts_with("~/") {
+        if let Ok(home) = std::env::var("HOME") {
+            return format!("{}{}", home, &arg[1..]);
+        }
+    }
+    arg
+}

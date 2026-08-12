@@ -9,7 +9,6 @@ pub fn parse(line: &str) -> ParseResult {
     let mut escaped_char = false;
 
     for (i, c) in line.chars().enumerate() {
-
         if escaped_char {
             temp.push(c);
             escaped_char = false;

@@ -88,14 +88,13 @@ fn input(mut line: String) -> Option<Vec<String>> {
                     return None;
                 }
                 else {
-                    if !next.trim().ends_with('\\') && line.starts_with("echo") && !next.trim().ends_with('"') {
-                        line.push('\n');
-                    }
-
                     if line.trim_end().ends_with('\\') {
                         line = line.trim_end().to_string();
                         line.pop();
+                    } else {
+                        line.push('\n');
                     }
+                
                     line.push_str(&next);
                 }
             },

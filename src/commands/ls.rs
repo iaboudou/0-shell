@@ -96,7 +96,7 @@ impl Flags {
                         _ => {}
                     }
                 }
-                entries.push(arg.to_string());
+                entries.push(crate::commands::help::tilda(arg.to_string()));
             }
         }
         true
@@ -306,7 +306,7 @@ impl Ls {
                     // last update
                     match chrono::DateTime::from_timestamp(meta_data.mtime(), 0) {
                         Some(e) => {
-                            let tz = e.with_timezone(&chrono::Local);
+                            let tz = e.with_timezone(&chrono_tz::Africa::Casablanca);
                             self.last_update = tz.format("%b %d %H:%M").to_string();
                         },
                         None => {
