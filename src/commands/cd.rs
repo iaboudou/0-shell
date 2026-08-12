@@ -1,58 +1,45 @@
-// Change the current working directory.
+// change the current working directory.
 pub fn run(args: &[String]) {
-
-    if args.len() > 1 {
+    if args.len() > 2 {
         eprintln!("cd: too many arguments");
         return;
     }
 
-    if args.is_empty() || args[0] == "~" {
+    let arg = if args.is_empty() || args[0] == "~" {
         match std::env::var("HOME") {
-            Ok(home) => {
-                let oldpwd = std::env::current_dir();
-
-                if let Err(e) = std::env::set_current_dir(&home) {
-                    eprintln!("cd: {}: {}", home, e.kind());
-                    return;
-                }
-
-                if let Ok(old) = oldpwd {
-                    unsafe { std::env::set_var("OLDPWD", old); }
-                }
-                unsafe { std::env::set_var("PWD", home); }
-                
-            }
+            Ok(home) => home,
             Err(e) => {
                 eprintln!("cd: HOME not set: {}", e);
+                return;
             }
         }
-        return;
-    }
-
-    if args[0] == "-" {
-        match std::env::var("OLDPWD") {
-            Ok(oldpwd) => {
-                let current = std::env::current_dir();
-
-                if let Err(e) = std::env::set_current_dir(&oldpwd) {
-                    eprintln!("cd: {}: {}", oldpwd, e.kind());
+    } else if args[0] == "--" {
+        if args.len() == 1 {
+            match std::env::var("HOME") {
+                Ok(home) => home,
+                Err(e) => {
+                    eprintln!("cd: HOME not set: {}", e);
                     return;
                 }
-
-                if let Ok(cur) = current {
-                    unsafe { std::env::set_var("OLDPWD", cur); }
-                }
-                unsafe { std::env::set_var("PWD", &oldpwd); }
+            }
+        } else {
+            crate::commands::help::tilda(args[1].clone())
+        }
+    } else if args[0] == "-" {
+        match std::env::var("OLDPWD") {
+            Ok(oldpwd) => {
                 println!("{}", oldpwd);
+                oldpwd
             }
             Err(e) => {
                 eprintln!("cd: OLDPWD not set: {}", e);
+                return;
             }
         }
-        return;
-    }
+    } else {
+        crate::commands::help::tilda(args[0].clone())
+    };
 
-    let arg = crate::commands::help::tilda(args[0].clone());
     let oldpwd = std::env::current_dir();
 
     if let Err(er) = std::env::set_current_dir(&arg) {

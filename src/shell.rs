@@ -41,6 +41,11 @@ pub fn run() {
                     eprintln!("0-shell: bad pattern");
                     continue;
                 }
+
+                if line.starts_with("#") {
+                    continue;
+                }
+
                 if n == 0 {
                     println!();
                     break;

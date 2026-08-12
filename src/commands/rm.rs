@@ -25,18 +25,11 @@ pub fn run(args: &[String]) {
     }
 
     for arg in files {
-        if arg == "." || arg == ".." {
-            eprintln!(
-                "rm: refusing to remove '{}' directory: skipping '{}'",
-                arg, arg
-            );
-            continue;
-        }
 
         let va = crate::commands::help::tilda(arg.to_string());
-
-        if va == "/" {
-            eprintln!("rm: it is dangerous to operate recursively on '/'");
+        let (dangerous, message) = crate::commands::help::is_dangerous(&va);
+        if dangerous {
+            eprintln!("{}", message);
             continue;
         }
 

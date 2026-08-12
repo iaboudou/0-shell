@@ -44,3 +44,18 @@ pub fn tilda(arg: String) -> String {
     }
     arg
 }
+
+// check if the path is dangerous to remove.
+pub fn is_dangerous(path: &str) -> (bool, String) {
+    if path == "/" {
+        return ( true, "rm: it is dangerous to operate recursively on '/'".to_string());
+    }
+
+    let path = path.trim_end_matches('/');
+
+    if path.ends_with("/..") || path == ".." || path.ends_with("/.") || path == "." {
+        return (true, "rm: can't remove '.' or '..'".to_string());
+    }
+
+    (false, String::new())
+}
