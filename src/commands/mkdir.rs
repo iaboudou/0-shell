@@ -7,6 +7,7 @@ pub fn run(args: &[String]) {
     }
 
     for arg in args {
+        let arg = crate::commands::help::tilda(arg.to_string());
         if let Err(e) = std::fs::create_dir(arg) {
             eprintln!("mkdir: {}", e.kind());
         }

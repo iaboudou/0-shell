@@ -51,14 +51,14 @@ pub fn run(args: &[String]) {
             };
         
             if let Err(e) = std::fs::rename(src, &(dest.join(f_n))) {
-                eprintln!("mv: {}", e);
+                eprintln!("mv: {}", e.kind());
             }
             continue;
         }
         
         // 2nd arg is file
         if let Err(e) = std::fs::rename(src, dest) {
-            eprintln!("mv: {}", e);
+            eprintln!("mv: {}", e.kind());
         }
     }
 

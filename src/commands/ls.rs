@@ -7,36 +7,42 @@ use std::os::unix::ffi::OsStrExt;
 pub fn run(args: &[String]) {
 
     let mut flags = Flags::new();
-    let mut entries = vec!();
+    let mut directories = vec!();
+    let mut files = vec!();
 
     if args.is_empty() {
         Ls::ls(".", &flags);
         return;
     }
 
-    if !flags.flags_and_args_are_correct(args, &mut entries) {
+    let (had_corerct_flag, had_entries) = flags.flags_args_are_correct_and_entities_mut(args, &mut directories, &mut files);
+
+    if !had_corerct_flag {
         Ls::usage();
         return;
     }
-
-    if entries.is_empty() {
+    if !had_entries {
         Ls::ls(".", &flags);
         return;
     }
 
-    entries.sort_by_key(|e| { if std::path::Path::new(e).is_dir() { 1 } else { 0 } });
+    if directories.is_empty() && files.is_empty() {
+        return;
+    }
 
-    for (i, e) in entries.iter().enumerate() {
-        if entries.len() > 1 && std::path::Path::new(e).is_dir() {
+    for e in &files{
+        Ls::ls(&e, &flags);
+    }
+    if !files.is_empty() && !directories.is_empty() {
+        println!();
+    }
+    for (i, e) in directories.iter().enumerate(){
+        if directories.len() + files.len() > 1 {
             println!("{}:", e);
         }
-
         Ls::ls(e, &flags);
-
-        if i + 1 < entries.len() {
-            if std::path::Path::new(&entries[i + 1]).is_dir() {
-                println!();
-            }
+        if i < directories.len() - 1 {
+            println!();
         }
     }
 }
@@ -74,7 +80,7 @@ impl Flags {
     }
 
     // validate all arguments and collect flags and paths
-    fn flags_and_args_are_correct(&mut self, args: &[String], entries: &mut Vec<String>) -> bool {
+    fn flags_args_are_correct_and_entities_mut(&mut self, args: &[String], dirs: &mut Vec<String>, files: &mut Vec<String>) -> (bool, bool) {
         let mut can_take_options = true;
         for arg in args {
             if arg == "--" {
@@ -84,22 +90,57 @@ impl Flags {
 
             if arg.starts_with('-') && can_take_options {
                 if !self.has_correct_flags(arg) {
-                    return false;
+                    return (false, false);
                 }
-            } else {
-                if arg == "~" {
-                    match std::env::var("HOME") {
-                        Ok(n) => {
-                            entries.push(n);
-                            continue;
-                        }
-                        _ => {}
-                    }
-                }
-                entries.push(crate::commands::help::tilda(arg.to_string()));
             }
         }
-        true
+
+        can_take_options = true;
+        let mut had_entries = false;
+        for arg in args {
+            if arg == "--" {
+                can_take_options = false;
+                continue;
+            }
+
+            if arg.starts_with('-') && can_take_options {
+                continue;
+            }
+            had_entries = true;
+
+            if arg == "~" {
+                match std::env::var("HOME") {
+                    Ok(n) => {
+                        dirs.push(n);
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+
+            let arg = crate::commands::help::tilda(arg.to_string());
+            match std::fs::symlink_metadata(&arg) {
+                Ok(m) => {
+                    if m.file_type().is_symlink() {
+                        if self.l || self.f {
+                            files.push(arg.clone());
+                        } else if std::fs::metadata(&arg).map(|m| m.is_dir()).unwrap_or(false) {
+                            dirs.push(arg);
+                        } else {
+                            files.push(arg);
+                        }
+                    } else if m.is_dir() {
+                        dirs.push(arg);
+                    } else {
+                        files.push(arg);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("ls: {}: {}", arg, e.kind());
+                }
+            }
+        }
+        (true, had_entries)
     }
 }
 
@@ -158,7 +199,7 @@ impl Ls {
         if let Ok(metadata) = meta_data {
             if metadata.file_type().is_symlink() {
                 if let Ok(target) = std::fs::metadata(p) {
-                    if !target.is_dir() || flags.l {
+                    if !target.is_dir() || flags.l || flags.f {
                         let mut ls = Self::new();
                         ls.flags = flags.clone();
                         ls.mutate_ls_info(std::ffi::OsStr::new(path));

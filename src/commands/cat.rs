@@ -25,6 +25,16 @@ pub fn run(args: &[String]) {
 
     for file in args {
         let file = crate::commands::help::tilda(file.to_string());
+        match std::fs::metadata(&file) {
+            Ok(meta_data) => {
+                if meta_data.len() > 1_500_000_000 {
+                    eprintln!("cat: {}: file too large", file);
+                    continue;
+                }
+            }
+            _ => {}
+        } 
+        
         match std::fs::read(&file) {
             Ok(content) => {
                 if let Err(e) = std::io::stdout().write_all(&content) {

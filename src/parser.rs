@@ -2,57 +2,66 @@ use crate::shell::ParseResult;
 
 // Parse the input string into command tokens
 pub fn parse(line: &str) -> ParseResult {
+    let chars: Vec<char> = line.chars().collect();
     let mut tokens = Vec::new();
-    let mut in_single_quot = false;
-    let mut in_duble_quots = false;
-    let mut temp = String::new();
-    let mut escaped_char = false;
+    let mut single_quote = false;
+    let mut double_quote = false;
+    let mut word = String::new();
+    let mut waiting = false;
+    let mut i = 0;
 
-    for (i, c) in line.chars().enumerate() {
-        if escaped_char {
-            temp.push(c);
-            escaped_char = false;
-            continue;
-        }
+    while i < chars.len() {
+        let c = chars[i];
 
-        if c == '\\' && !in_single_quot {
-            escaped_char = true;
-            continue;
-        } 
-
-        if c == '\'' && !in_duble_quots {
-            in_single_quot = !in_single_quot;
-        }
-        else if c == '\"' && !in_single_quot {
-            in_duble_quots = !in_duble_quots;
-        }
-        else if c.is_whitespace() && !in_single_quot && !in_duble_quots  {
-            if !temp.is_empty() {
-                tokens.push(temp);
-                temp = String::new();
+        if c == '\\' && !single_quote {
+            match chars.get(i + 1) {
+                None => {
+                    waiting = true;
+                    i += 1;
+                    continue;
+                }
+                Some('\n') => {
+                    if i + 2 == chars.len() {
+                        waiting = true;
+                    }
+                    i += 2;
+                    continue;
+                }
+                Some(&next) => {
+                    if double_quote && !['`', '"', '\\', '$'].contains(&next) {
+                        word.push('\\');
+                    }
+                    word.push(next);
+                    i += 2;
+                    continue;
+                }
             }
-        }else if c == '#' && !in_single_quot && !in_duble_quots  && (i> 0 && line.chars().nth(i-1).unwrap_or_default().is_whitespace() ) {
+        }
+
+        if c == '\'' && !double_quote {
+            single_quote = !single_quote;
+        } else if c == '"' && !single_quote {
+            double_quote = !double_quote;
+        } else if c.is_whitespace() && !single_quote && !double_quote {
+            if !word.is_empty() {
+                tokens.push(word.clone());
+                word.clear();
+            }
+        } else if c == '#' && !single_quote && !double_quote && i > 0 && chars[i - 1].is_whitespace() {
             return ParseResult::Complete(tokens);
+        } else {
+            word.push(c);
         }
-        else {
-            temp.push(c);
-        }
+
+        i += 1;
     }
 
-    if !temp.is_empty() {
-        tokens.push(temp);
+    if !word.is_empty() {
+        tokens.push(word);
     }
 
-    if escaped_char {
+    if single_quote || double_quote || waiting {
         return ParseResult::Uncomplete("> ".to_string());
-    }
-
-    if in_single_quot {
-        return ParseResult::Uncomplete("quote> ".to_string());
-    }
-
-    if in_duble_quots {
-        return ParseResult::Uncomplete("dquote> ".to_string());
     }
 
     ParseResult::Complete(tokens)
