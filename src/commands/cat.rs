@@ -36,7 +36,10 @@ pub fn run(args: &[String]) {
         } 
         
         match std::fs::read(&file) {
-            Ok(content) => {
+            Ok(mut content) => {
+                if !content.ends_with(b"\n") {
+                    content.push(b'\n');
+                }
                 if let Err(e) = std::io::stdout().write_all(&content) {
                     eprintln!("cat: {}", e.kind());
                 }

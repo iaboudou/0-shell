@@ -7,38 +7,38 @@ pub fn parse(line: &str) -> ParseResult {
     let mut single_quote = false;
     let mut double_quote = false;
     let mut word = String::new();
-    let mut waiting = false;
     let mut i = 0;
+
+    let t = line.chars().count() - line.trim_end_matches('\\').chars().count();
+    if t % 2 != 0 {
+        return ParseResult::Uncomplete("> ".to_string());
+    }
 
     while i < chars.len() {
         let c = chars[i];
 
         if c == '\\' && !single_quote {
-            match chars.get(i + 1) {
-                None => {
-                    waiting = true;
-                    i += 1;
-                    continue;
+            if i + 1 >= chars.len() {
+                return ParseResult::Uncomplete("> ".to_string());
+            }
+        
+            if double_quote {
+                if chars[i + 1] == '$' || chars[i + 1] == '`' || chars[i + 1] == '"' || chars[i + 1] == '\\' {
+                    word.push(chars[i + 1]);
+                } else if chars[i + 1] == '\n' {
+                } else {
+                    word.push('\\');
+                    word.push(chars[i + 1]);
                 }
-                Some('\n') => {
-                    if i + 2 == chars.len() {
-                        waiting = true;
-                    }
-                    i += 2;
-                    continue;
-                }
-                Some(&next) => {
-                    if double_quote && !['`', '"', '\\', '$'].contains(&next) {
-                        word.push('\\');
-                    }
-                    word.push(next);
-                    i += 2;
-                    continue;
+            } else {
+                if chars[i + 1] == '\n' {
+                } else {
+                    word.push(chars[i + 1]);
                 }
             }
-        }
-
-        if c == '\'' && !double_quote {
+            i += 2;
+            continue;
+        } else if c == '\'' && !double_quote {
             single_quote = !single_quote;
         } else if c == '"' && !single_quote {
             double_quote = !double_quote;
@@ -60,7 +60,7 @@ pub fn parse(line: &str) -> ParseResult {
         tokens.push(word);
     }
 
-    if single_quote || double_quote || waiting {
+    if single_quote || double_quote {
         return ParseResult::Uncomplete("> ".to_string());
     }
 
