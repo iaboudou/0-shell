@@ -30,6 +30,9 @@ pub fn run(args: &[String]) {
         return;
     }
 
+    files.sort();
+    directories.sort();
+
     for e in &files{
         Ls::ls(&e, &flags);
     }
