@@ -85,11 +85,12 @@ fn input(mut line: String) -> Option<Vec<String>> {
 
                 let mut next = String::new();
                 let n = match std::io::stdin().read_line(&mut next) {
-                    Ok(n) => n,
+                    Ok(n) => {n},
                     Err(_) => return None,
                 };
 
                 if n == 0 {
+                    println!(); 
                     return None;
                 }
                 else {

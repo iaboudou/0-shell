@@ -200,31 +200,14 @@ impl Ls {
         let p = std::path::Path::new(path);
         let meta_data = std::fs::symlink_metadata(p);
         
-        // if path is file
+        // if path is file, special file, symlink to directorie with (-l/-f) display without listing contents
         if let Ok(metadata) = meta_data {
-            if metadata.file_type().is_symlink() {
-                if let Ok(target) = std::fs::metadata(p) {
-                    if !target.is_dir() || flags.l || flags.f {
-                        let mut ls = Self::new();
-                        ls.flags = flags.clone();
-                        ls.mutate_ls_info(std::ffi::OsStr::new(path));
-                        println!("{}", ls);
-                        return;
-                    }
-                } else {
-                    let mut ls = Self::new();
-                    ls.flags = flags.clone();
-                    ls.mutate_ls_info(std::ffi::OsStr::new(path));
-                    println!("{}", ls);
-                    return;
-                }
-            }
-        
             if metadata.file_type().is_file()
                 || metadata.file_type().is_fifo()
                 || metadata.file_type().is_socket()
                 || metadata.file_type().is_char_device()
                 || metadata.file_type().is_block_device()
+                || (metadata.file_type().is_symlink() && (!std::fs::metadata(p).map(|m| m.is_dir()).unwrap_or(false) || flags.l || flags.f))
             {
                 let mut ls = Self::new();
                 ls.flags = flags.clone();
@@ -234,7 +217,7 @@ impl Ls {
             }
         }
 
-        // if path is not a file
+        // if path is a directorie
         let mut entries = match Self::collect_directories(path.to_string(), flags) {
             Some(e) => e,
             None => return,
@@ -266,6 +249,7 @@ impl Ls {
             ls_list.push(ls);
         }
 
+        // we need widths lengh for Display 
         let mut widths = Widths::new();
         for ls in &ls_list {
             widths.permission = widths.permission.max(ls.permission.len());
@@ -456,9 +440,9 @@ impl Ls {
 
         let perms = ["---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"];
 
-        let mut owner = perms[((mode >> 6) & 0b0000_000_000_000_111) as usize].to_owned();
-        let mut group = perms[((mode >> 3) & 0b0000_000_000_000_111) as usize].to_owned();
-        let mut other = perms[(mode & 0b0000_000_000_000_111) as usize].to_owned();
+        let mut owner = perms[((mode >> 6) & 0o7) as usize].to_owned();
+        let mut group = perms[((mode >> 3) & 0o7) as usize].to_owned();
+        let mut other = perms[(mode & 0o7) as usize].to_owned();
 
         // setuid -> replace with s/S
         if mode & 0b0000_100_000_000_000 != 0 {
