@@ -37,7 +37,7 @@ pub fn run(args: &[String]) {
         
         match std::fs::read(&file) {
             Ok(mut content) => {
-                if !content.ends_with(b"\n") {
+                if !content.ends_with(b"\n") && !content.is_empty() {
                     content.push(b'\n');
                 }
                 if let Err(e) = std::io::stdout().write_all(&content) {

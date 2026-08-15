@@ -124,10 +124,12 @@ impl Flags {
                     if m.file_type().is_symlink() {
                         if self.l || self.f {
                             files.push(arg.clone());
-                        } else if std::fs::metadata(&arg).map(|m| m.is_dir()).unwrap_or(false) {
-                            dirs.push(arg);
                         } else {
-                            files.push(arg);
+                            match std::fs::metadata(&arg) {
+                                Ok(target) if target.is_dir() => dirs.push(arg),
+                                Ok(_) => files.push(arg),
+                                Err(e) => eprintln!("ls: {}: {}", arg, e.kind()),
+                            }
                         }
                     } else if m.is_dir() {
                         dirs.push(arg);
@@ -371,6 +373,7 @@ impl Ls {
                 },
                 Err(e) => {
                     eprintln!("ls: {}: {}", entry.display(), e.kind());
+                    return;
                 },
             }
         }
@@ -403,6 +406,7 @@ impl Ls {
                         }
                         Err(e) => {
                             eprintln!("ls: {}: {}", path, e.kind());
+                            return None;
                         }
                     }
                 }
